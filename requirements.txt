@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+openai
+chromadb
+python-dotenv
+streamlit
+requests
+# legal_parser.py is a local module, not from pip 
