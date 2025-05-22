@@ -43,6 +43,10 @@ This application provides a user interface to interact with an AI model knowledg
 3.  **Access the application:**
     Open your web browser and navigate to `http://localhost:8501`. You will be prompted for the `DEMO_PASSWORD` you set in your `.env` file.
 
+### Live Demo
+
+You can access a live demo of the application here: [TBK Tenancy Law Assistant Demo](https://rag-ai-assistant-rental-law.streamlit.app/)
+
 ## Demo Security
 
 The application implements two layers of security for this demo setup:
@@ -100,6 +104,10 @@ Türk Borçlar Kanunu'nun Konut ve Çatılı İşyeri Kiraları bölümü hakkı
     ```
 
 3.  Tarayıcınızda `http://localhost:8501` adresine giderek uygulamayı kullanabilirsiniz.
+
+### Canlı Demo
+
+Uygulamanın canlı demosuna buradan erişebilirsiniz: [TBK Kira Hukuku Asistanı Demo](https://rag-ai-assistant-rental-law.streamlit.app/)
 
 ## Demo Güvenliği
 
