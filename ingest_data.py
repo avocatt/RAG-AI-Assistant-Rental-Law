@@ -8,7 +8,7 @@ from openai import OpenAI
 from legal_parser import parse_legal_text
 
 # --- Configuration ---
-TEXT_FILE_PATH = "TBK_Konut_ve_Catili_Isyeri_Kiralari.txt"
+TEXT_FILE_PATH = "source_data/TBK_Konut_ve_Catili_Isyeri_Kiralari.txt"
 # PARSED_ARTICLES_JSON_PATH = "parsed_articles.json" # Output of parser, not directly used by ingest if parsing on the fly
 # Directory where ChromaDB will store its data
 CHROMA_DB_PATH = "./chroma_db_store"
