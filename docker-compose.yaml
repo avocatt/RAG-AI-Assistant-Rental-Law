@@ -11,10 +11,10 @@ services:
       - API_SECRET_KEY=${API_SECRET_KEY}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
+      interval: 60s
+      timeout: 30s
       retries: 3
-      start_period: 40s
+      start_period: 120s
     networks:
       - rental-rag-network
     logging:
@@ -31,14 +31,11 @@ services:
     container_name: rental-rag-frontend
     restart: unless-stopped
     environment:
-      - FASTAPI_URL=https://rental-rag-api.emreterzi.com/query
+      - FASTAPI_URL=http://backend:8000/query
       - DEMO_PASSWORD=${DEMO_PASSWORD}
       - API_SECRET_KEY=${API_SECRET_KEY}
-    ports:
-      - "8501:8501"
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
       - rental-rag-network
     logging:
@@ -50,7 +47,3 @@ services:
 networks:
   rental-rag-network:
     driver: bridge
-
-volumes:
-  chroma_data:
-    driver: local

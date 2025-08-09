@@ -88,32 +88,42 @@ db_collection = None
 async def startup_event():
     global chroma_client, openai_client, db_collection
 
+    print("🚀 Starting RAG application startup...")
+    
     if not OPENAI_API_KEY:
+        print("❌ OPENAI_API_KEY not found")
         raise RuntimeError(
             "OPENAI_API_KEY not found. Please set it in your .env file.")
+    print("✅ OpenAI API key loaded")
     
     if not API_SECRET_KEY:
+        print("❌ API_SECRET_KEY not found")
         raise RuntimeError(
             "API_SECRET_KEY not found. Please set it in your .env file for security.")
+    print("✅ API secret key loaded")
 
-    print("Initializing ChromaDB client...")
+    print("🗄️  Initializing ChromaDB client...")
     chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+    print("✅ ChromaDB client initialized")
 
+    print("🔗 Setting up OpenAI embedding function...")
     from chromadb.utils import embedding_functions
     openai_ef = embedding_functions.OpenAIEmbeddingFunction(
         api_key=OPENAI_API_KEY,
         model_name=EMBEDDING_MODEL_NAME
     )
+    print("✅ OpenAI embedding function ready")
 
+    print(f"🔍 Looking for existing ChromaDB collection: '{CHROMA_COLLECTION_NAME}'...")
     try:
         db_collection = chroma_client.get_collection(
             name=CHROMA_COLLECTION_NAME,
             embedding_function=openai_ef  # Provide EF for query embedding consistency
         )
-        print(
-            f"Successfully connected to ChromaDB collection: '{CHROMA_COLLECTION_NAME}' with {db_collection.count()} items.")
+        print(f"✅ Found existing collection with {db_collection.count()} items")
     except Exception as e:
-        print(f"ChromaDB collection not found. Creating it by running ingest_data.py...")
+        print(f"📦 Collection not found. Creating new collection...")
+        print("⏳ This may take 1-2 minutes for data ingestion and OpenAI embeddings...")
         try:
             # Import and run ingest_data to create the collection
             import ingest_data
@@ -123,15 +133,15 @@ async def startup_event():
                 name=CHROMA_COLLECTION_NAME,
                 embedding_function=openai_ef
             )
-            print(
-                f"Successfully created and connected to ChromaDB collection: '{CHROMA_COLLECTION_NAME}' with {db_collection.count()} items.")
+            print(f"✅ Successfully created collection with {db_collection.count()} items")
         except Exception as ingest_error:
+            print(f"❌ Failed to create collection: {ingest_error}")
             raise RuntimeError(
                 f"Could not create ChromaDB collection '{CHROMA_COLLECTION_NAME}'. Error: {ingest_error}")
 
-    print("Initializing OpenAI client for LLM...")
+    print("🤖 Initializing OpenAI client for LLM...")
     openai_client = OpenAI(api_key=OPENAI_API_KEY)
-    print("Initialization complete.")
+    print("🎉 Initialization complete! Application ready to serve requests.")
 
 
 def construct_llm_prompt(query: str, retrieved_chunks: list[dict]) -> str:
