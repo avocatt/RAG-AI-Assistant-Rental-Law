@@ -1,10 +1,13 @@
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Request
 from pydantic import BaseModel
 import chromadb
 from openai import OpenAI
 import uvicorn
+import time
+from collections import defaultdict
+import logging
 
 # --- Configuration ---
 load_dotenv()  # Load environment variables from .env file
@@ -12,10 +15,49 @@ load_dotenv()  # Load environment variables from .env file
 CHROMA_DB_PATH = "./chroma_db_store"
 CHROMA_COLLECTION_NAME = "tbk_kira_articles"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+API_SECRET_KEY = os.getenv("API_SECRET_KEY")
 # Used by Chroma's OpenAIEmbeddingFunction
 EMBEDDING_MODEL_NAME = "text-embedding-ada-002"
 LLM_MODEL_NAME = "gpt-3.5-turbo"  # Or "gpt-4o"
 TOP_K_RESULTS = 3
+
+# Rate limiting configuration
+RATE_LIMIT_REQUESTS = 10  # requests per minute
+RATE_LIMIT_WINDOW = 60   # seconds
+rate_limiter = defaultdict(list)
+
+# --- Logging Configuration ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# --- Security Functions ---
+def validate_api_key(api_key: str) -> bool:
+    """Validate API key against the configured secret"""
+    if not API_SECRET_KEY:
+        logger.error("API_SECRET_KEY not configured")
+        return False
+    return api_key == API_SECRET_KEY
+
+def check_rate_limit(client_ip: str) -> bool:
+    """Check if client IP is within rate limits"""
+    current_time = time.time()
+    
+    # Clean old requests outside the window
+    rate_limiter[client_ip] = [
+        req_time for req_time in rate_limiter[client_ip] 
+        if current_time - req_time < RATE_LIMIT_WINDOW
+    ]
+    
+    # Check if within limit
+    if len(rate_limiter[client_ip]) >= RATE_LIMIT_REQUESTS:
+        return False
+    
+    # Add current request
+    rate_limiter[client_ip].append(current_time)
+    return True
 
 # --- FastAPI App Initialization ---
 app = FastAPI(
@@ -49,6 +91,10 @@ async def startup_event():
     if not OPENAI_API_KEY:
         raise RuntimeError(
             "OPENAI_API_KEY not found. Please set it in your .env file.")
+    
+    if not API_SECRET_KEY:
+        raise RuntimeError(
+            "API_SECRET_KEY not found. Please set it in your .env file for security.")
 
     print("Initializing ChromaDB client...")
     chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
@@ -122,9 +168,32 @@ CEVAP:
 
 
 @app.post("/query", response_model=QueryResponse)
-async def handle_query(request: QueryRequest):
+async def handle_query(
+    request: QueryRequest,
+    fastapi_request: Request,
+    x_api_key: str = Header(..., alias="X-API-Key")
+):
     global db_collection, openai_client
-
+    
+    # Get client IP for rate limiting and logging
+    client_ip = fastapi_request.client.host
+    
+    # Security checks
+    if not validate_api_key(x_api_key):
+        logger.warning(f"Invalid API key attempt from IP: {client_ip}")
+        raise HTTPException(
+            status_code=401, 
+            detail="Invalid API key"
+        )
+    
+    if not check_rate_limit(client_ip):
+        logger.warning(f"Rate limit exceeded for IP: {client_ip}")
+        raise HTTPException(
+            status_code=429, 
+            detail=f"Rate limit exceeded. Maximum {RATE_LIMIT_REQUESTS} requests per minute allowed."
+        )
+    
+    # Service availability checks
     if not db_collection:
         raise HTTPException(
             status_code=503, detail="ChromaDB collection not available. Server may be initializing or encountered an error.")
@@ -133,7 +202,7 @@ async def handle_query(request: QueryRequest):
             status_code=503, detail="OpenAI client not available.")
 
     user_query = request.query_text
-    print(f"Received query: {user_query}")
+    logger.info(f"Received query from IP {client_ip}: {user_query[:100]}...")
 
     try:
         # 1. Retrieve relevant documents from ChromaDB
@@ -152,17 +221,17 @@ async def handle_query(request: QueryRequest):
                     "metadata": results['metadatas'][0][i]
                 })
 
-        print(f"Retrieved {len(retrieved_docs)} documents from ChromaDB.")
+        logger.info(f"Retrieved {len(retrieved_docs)} documents from ChromaDB for IP {client_ip}")
         if not retrieved_docs:
-            print("No relevant documents found in ChromaDB for the query.")
+            logger.warning(f"No relevant documents found in ChromaDB for query from IP {client_ip}")
             # Fallback or inform user, here we'll let the LLM handle it via prompt
 
         # 2. Construct prompt for LLM
         prompt = construct_llm_prompt(user_query, retrieved_docs)
-        # print(f"\nConstructed LLM Prompt:\n{prompt}\n") # For debugging
+        # logger.debug(f"Constructed LLM Prompt:\n{prompt}\n") # For debugging
 
         # 3. Call LLM
-        print(f"Sending prompt to LLM model: {LLM_MODEL_NAME}")
+        logger.info(f"Sending prompt to LLM model: {LLM_MODEL_NAME} for IP {client_ip}")
         chat_completion = openai_client.chat.completions.create(
             model=LLM_MODEL_NAME,
             messages=[
@@ -173,21 +242,49 @@ async def handle_query(request: QueryRequest):
         )
 
         answer = chat_completion.choices[0].message.content.strip()
-        print(f"LLM Answer: {answer}")
+        logger.info(f"Successfully processed query for IP {client_ip}, response length: {len(answer)}")
 
         return QueryResponse(answer=answer, retrieved_sources=retrieved_docs)
 
     except RuntimeError as e:  # Catch specific runtime errors like API key issues
-        print(f"Runtime error during query processing: {e}")
+        logger.error(f"Runtime error during query processing for IP {client_ip}: {e}")
         raise HTTPException(
             status_code=500, detail=f"An internal error occurred: {str(e)}")
     except Exception as e:
-        print(f"Unexpected error during query processing: {e}")
+        logger.error(f"Unexpected error during query processing for IP {client_ip}: {e}")
         # Log the full traceback for debugging
         import traceback
-        traceback.print_exc()
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(
             status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring"""
+    try:
+        # Check if services are available
+        if not db_collection:
+            return {"status": "unhealthy", "reason": "ChromaDB not available"}
+        if not openai_client:
+            return {"status": "unhealthy", "reason": "OpenAI client not available"}
+        
+        # Check ChromaDB collection count
+        collection_count = db_collection.count()
+        
+        return {
+            "status": "healthy",
+            "services": {
+                "chromadb": "connected",
+                "openai": "connected"
+            },
+            "collection_documents": collection_count,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {"status": "unhealthy", "reason": str(e)}
+
 
 if __name__ == "__main__":
     print("Starting Uvicorn server for FastAPI app...")

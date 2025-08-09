@@ -1,0 +1,47 @@
+# Git files
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+build
+*.egg-info
+dist
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Documentation
+README.md
+*.md
+!CLAUDE.md
+
+# Screenshots
+screenshots/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files (these will be passed via environment variables)
+.env
+
+# Logs
+*.log
+
+# Docker files (don't copy into containers)
+Dockerfile*
+docker-compose*.yml
+.dockerignore

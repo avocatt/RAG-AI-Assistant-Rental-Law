@@ -1,0 +1,64 @@
+services:
+  # FastAPI Backend Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: rental-rag-backend
+    restart: unless-stopped
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - API_SECRET_KEY=${API_SECRET_KEY}
+    volumes:
+      # Persist ChromaDB data
+      - ./chroma_db_store:/app/chroma_db_store
+      # Mount source data for consistency
+      - ./source_data:/app/source_data
+      - ./parsed_articles.json:/app/parsed_articles.json
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - rental-rag-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Streamlit Frontend Service  
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: rental-rag-frontend
+    restart: unless-stopped
+    environment:
+      - FASTAPI_URL=http://backend:8000/query
+      - DEMO_PASSWORD=${DEMO_PASSWORD}
+      - API_SECRET_KEY=${API_SECRET_KEY}
+    ports:
+      - "8501:8501"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - rental-rag-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  rental-rag-network:
+    driver: bridge
+
+volumes:
+  chroma_data:
+    driver: local

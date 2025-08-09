@@ -6,8 +6,9 @@ from dotenv import load_dotenv
 
 # --- Configuration ---
 load_dotenv()  # Load environment variables from .env file
-FASTAPI_URL = "http://127.0.0.1:8000/query"  # URL of your FastAPI backend
+FASTAPI_URL = os.getenv("FASTAPI_URL", "http://127.0.0.1:8000/query")  # URL of your FastAPI backend
 DEMO_PASSWORD = os.getenv("DEMO_PASSWORD")
+API_SECRET_KEY = os.getenv("API_SECRET_KEY")
 
 # --- Password Protection Logic ---
 
@@ -20,6 +21,11 @@ def check_password():
     if not DEMO_PASSWORD:  # Check if DEMO_PASSWORD is set at all
         st.error(
             "Uygulama şifresi yapılandırılmamış. Lütfen sistem yöneticisi ile iletişime geçin.")
+        return False
+    
+    if not API_SECRET_KEY:  # Check if API_SECRET_KEY is set
+        st.error(
+            "API güvenlik anahtarı yapılandırılmamış. Lütfen sistem yöneticisi ile iletişime geçin.")
         return False
 
     if st.session_state.password_correct:
@@ -84,8 +90,12 @@ if user_query := st.chat_input("Sorunuzu buraya yazın..."):
     # Call FastAPI backend
     try:
         payload = {"query_text": user_query}
+        headers = {
+            "X-API-Key": API_SECRET_KEY,
+            "Content-Type": "application/json"
+        }
         # Increased timeout for LLM
-        response = requests.post(FASTAPI_URL, json=payload, timeout=120)
+        response = requests.post(FASTAPI_URL, json=payload, headers=headers, timeout=120)
         response.raise_for_status()  # Raise an exception for HTTP errors
 
         response_data = response.json()
