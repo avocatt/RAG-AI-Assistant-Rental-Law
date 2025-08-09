@@ -9,11 +9,6 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - API_SECRET_KEY=${API_SECRET_KEY}
-    volumes:
-      # Persist ChromaDB data
-      - ./chroma_db_store:/app/chroma_db_store
-      # Mount source data for consistency
-      - ./source_data:/app/source_data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

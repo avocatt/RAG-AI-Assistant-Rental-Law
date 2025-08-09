@@ -113,13 +113,21 @@ async def startup_event():
         print(
             f"Successfully connected to ChromaDB collection: '{CHROMA_COLLECTION_NAME}' with {db_collection.count()} items.")
     except Exception as e:
-        print(f"Error connecting to ChromaDB collection: {e}")
-        # Depending on the error, you might want to prevent app startup
-        # For now, we'll let it try, but queries will fail.
-        # A more robust app might try to create_collection if get fails and it's expected.
-        # However, ingestion is a separate step, so collection should exist.
-        raise RuntimeError(
-            f"Could not get ChromaDB collection '{CHROMA_COLLECTION_NAME}'. Ensure it was created by ingest_data.py. Error: {e}")
+        print(f"ChromaDB collection not found. Creating it by running ingest_data.py...")
+        try:
+            # Import and run ingest_data to create the collection
+            import ingest_data
+            ingest_data.main()
+            # Try to get the collection again
+            db_collection = chroma_client.get_collection(
+                name=CHROMA_COLLECTION_NAME,
+                embedding_function=openai_ef
+            )
+            print(
+                f"Successfully created and connected to ChromaDB collection: '{CHROMA_COLLECTION_NAME}' with {db_collection.count()} items.")
+        except Exception as ingest_error:
+            raise RuntimeError(
+                f"Could not create ChromaDB collection '{CHROMA_COLLECTION_NAME}'. Error: {ingest_error}")
 
     print("Initializing OpenAI client for LLM...")
     openai_client = OpenAI(api_key=OPENAI_API_KEY)
