@@ -14,7 +14,6 @@ services:
       - ./chroma_db_store:/app/chroma_db_store
       # Mount source data for consistency
       - ./source_data:/app/source_data
-      - ./parsed_articles.json:/app/parsed_articles.json
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
