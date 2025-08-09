@@ -9,6 +9,8 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - API_SECRET_KEY=${API_SECRET_KEY}
+    volumes:
+      - chroma_data:/app/chroma_db_store
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 60s
@@ -47,3 +49,7 @@ services:
 networks:
   rental-rag-network:
     driver: bridge
+
+volumes:
+  chroma_data:
+    driver: local
