@@ -25,11 +25,7 @@ EMBEDDING_MODEL_NAME = "text-embedding-ada-002"
 def main():
     print("Starting data ingestion process...")
 
-    # 1. Debug and Check API Key
-    print(f"🔍 DEBUG (ingest_data): OPENAI_API_KEY value = '{OPENAI_API_KEY}'")
-    print(f"🔍 DEBUG (ingest_data): OPENAI_API_KEY length = {len(OPENAI_API_KEY) if OPENAI_API_KEY else 'None'}")
-    print(f"🔍 DEBUG (ingest_data): OPENAI_API_KEY starts with sk- = {OPENAI_API_KEY.startswith('sk-') if OPENAI_API_KEY else 'N/A'}")
-    
+    # 1. Check API Key
     if not OPENAI_API_KEY:
         raise ValueError(
             "OPENAI_API_KEY not found in environment variables. Please set it in Coolify.")

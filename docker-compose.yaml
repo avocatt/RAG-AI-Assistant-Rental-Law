@@ -7,8 +7,8 @@ services:
     container_name: rental-rag-backend
     restart: unless-stopped
     environment:
-      - OPENAI_API_KEY={{ environment.OPENAI_API_KEY }}
-      - API_SECRET_KEY={{ environment.API_SECRET_KEY }}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - API_SECRET_KEY=${API_SECRET_KEY}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 60s
@@ -31,9 +31,9 @@ services:
     container_name: rental-rag-frontend
     restart: unless-stopped
     environment:
-      - FASTAPI_URL={{ environment.FASTAPI_URL }}
-      - DEMO_PASSWORD={{ environment.DEMO_PASSWORD }}
-      - API_SECRET_KEY={{ environment.API_SECRET_KEY }}
+      - FASTAPI_URL=${FASTAPI_URL}
+      - DEMO_PASSWORD=${DEMO_PASSWORD}
+      - API_SECRET_KEY=${API_SECRET_KEY}
     depends_on:
       - backend
     networks:

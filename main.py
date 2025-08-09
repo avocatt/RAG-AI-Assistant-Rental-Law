@@ -90,20 +90,6 @@ async def startup_event():
 
     print("🚀 Starting RAG application startup...")
     
-    # Debug: Show what we actually received
-    print(f"🔍 DEBUG: OPENAI_API_KEY value = '{OPENAI_API_KEY}'")
-    print(f"🔍 DEBUG: OPENAI_API_KEY length = {len(OPENAI_API_KEY) if OPENAI_API_KEY else 'None'}")
-    print(f"🔍 DEBUG: OPENAI_API_KEY starts with sk- = {OPENAI_API_KEY.startswith('sk-') if OPENAI_API_KEY else 'N/A'}")
-    
-    # Debug: Show all environment variables that contain "API" or "KEY"
-    import os
-    print("🔍 DEBUG: Environment variables containing 'API' or 'KEY':")
-    for key, value in os.environ.items():
-        if 'API' in key.upper() or 'KEY' in key.upper():
-            # Mask the value for security, show first/last few chars
-            masked_value = value[:8] + '***' + value[-4:] if len(value) > 12 else '***MASKED***'
-            print(f"  {key} = {masked_value}")
-    
     if not OPENAI_API_KEY:
         print("❌ OPENAI_API_KEY not found")
         raise RuntimeError(
