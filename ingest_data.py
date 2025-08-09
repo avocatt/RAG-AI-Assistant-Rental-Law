@@ -8,24 +8,16 @@ from openai import OpenAI
 from legal_parser import parse_legal_text
 
 # --- Configuration ---
+load_dotenv()  # Load environment variables from .env file
+
 TEXT_FILE_PATH = "source_data/TBK_Konut_ve_Catili_Isyeri_Kiralari.txt"
 # PARSED_ARTICLES_JSON_PATH = "parsed_articles.json" # Output of parser, not directly used by ingest if parsing on the fly
 # Directory where ChromaDB will store its data
 CHROMA_DB_PATH = "./chroma_db_store"
 CHROMA_COLLECTION_NAME = "tbk_kira_articles"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # Standard OpenAI embedding model
 EMBEDDING_MODEL_NAME = "text-embedding-ada-002"
-
-# --- Helper Functions ---
-
-
-def get_OPENAI_API_KEY():
-    load_dotenv()  # Load environment variables from .env file
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError(
-            "OPENAI_API_KEY not found in .env file or environment variables. Please create a .env file with OPENAI_API_KEY=\"your_key_here\".")
-    return api_key
 
 # --- Main Ingestion Logic ---
 
@@ -33,8 +25,10 @@ def get_OPENAI_API_KEY():
 def main():
     print("Starting data ingestion process...")
 
-    # 1. Load API Key
-    OPENAI_API_KEY = get_OPENAI_API_KEY()
+    # 1. Check API Key
+    if not OPENAI_API_KEY:
+        raise ValueError(
+            "OPENAI_API_KEY not found in environment variables. Please set it in Coolify.")
 
     # 2. Parse legal text
     print(f"Parsing legal text from: {TEXT_FILE_PATH}")
