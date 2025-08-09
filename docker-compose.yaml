@@ -15,8 +15,6 @@ services:
       # Mount source data for consistency
       - ./source_data:/app/source_data
       - ./parsed_articles.json:/app/parsed_articles.json
-    ports:
-      - "8000:8000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -39,7 +37,7 @@ services:
     container_name: rental-rag-frontend
     restart: unless-stopped
     environment:
-      - FASTAPI_URL=http://backend:8000/query
+      - FASTAPI_URL=https://rental-rag-api.emreterzi.com/query
       - DEMO_PASSWORD=${DEMO_PASSWORD}
       - API_SECRET_KEY=${API_SECRET_KEY}
     ports:
