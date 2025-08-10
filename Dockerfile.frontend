@@ -18,6 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY app_ui.py .
 
+# Copy Streamlit configuration
+COPY .streamlit/ .streamlit/
+
 # Create a non-root user
 RUN useradd --create-home --shell /bin/bash streamlit
 

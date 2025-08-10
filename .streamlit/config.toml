@@ -1,0 +1,35 @@
+[server]
+# Basic server configuration
+headless = true
+port = 8501
+address = "0.0.0.0"
+
+# Disable file watching in production
+fileWatcherType = "none"
+
+# Enable XSRF protection
+enableXsrfProtection = true
+
+# Enable CORS protection
+enableCORS = false
+
+# Disable development mode
+runOnSave = false
+
+[browser]
+# Disable automatic browser opening
+serverAddress = "0.0.0.0"
+serverPort = 8501
+
+[logger]
+# Set logging level to reduce noise from bot scans
+level = "warning"
+messageFormat = "%(asctime)s %(levelname) -7s %(name)s: %(message)s"
+
+[client]
+# Disable source maps in production
+showErrorDetails = false
+
+[runner]
+# Disable magic commands that could be security risks
+magicEnabled = false
