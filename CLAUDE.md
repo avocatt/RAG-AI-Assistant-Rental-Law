@@ -10,7 +10,7 @@ This is a RAG (Retrieval-Augmented Generation) AI assistant application that ans
 
 **Two-service architecture:**
 - **Backend (FastAPI)**: Handles ChromaDB vector database queries, OpenAI API interactions, and legal document retrieval (`main.py`)
-- **Frontend (Streamlit)**: Provides password-protected user interface that communicates with backend via REST API (`app_ui.py`)
+- **Frontend (Streamlit)**: Provides user interface that communicates with backend via REST API (`app_ui.py`)
 
 **Key Components:**
 - `legal_parser.py`: Parses Turkish legal text into structured articles with regex patterns for MADDE (article) identification
@@ -40,7 +40,17 @@ streamlit run app_ui.py
 Create `.env` file with:
 ```
 OPENAI_API_KEY="your_openai_api_key_here"
-DEMO_PASSWORD="your_secret_demo_password_here"
+API_SECRET_KEY="your_secure_random_api_key_here"
+BASIC_AUTH_CREDENTIALS="username:$$apr1$$xxxxx$$yyyyyyyyyyyyy"  # For Traefik auth
+```
+
+**Generate Basic Auth Credentials:**
+```bash
+# Using htpasswd
+htpasswd -nb username password
+
+# Using Docker if htpasswd not available
+docker run --rm httpd:alpine htpasswd -nb username password
 ```
 
 ## Key Configuration
@@ -76,6 +86,12 @@ When modifying legal text processing, ensure compatibility with Turkish legal do
 
 ## Security Notes
 
-- Frontend implements password protection via `DEMO_PASSWORD` environment variable
-- OpenAI API key is managed securely in backend only
+- **Infrastructure Layer**: Traefik Basic Authentication protects both frontend and backend services
+- **Application Layer**: Backend API requires `X-API-Key` header for additional security
+- **Rate Limiting**: Backend implements 10 requests/minute per IP address
+- **Environment Variables**: 
+  - `BASIC_AUTH_CREDENTIALS`: Traefik Basic Auth (htpasswd format)
+  - `API_SECRET_KEY`: Backend API key validation
+  - `OPENAI_API_KEY`: OpenAI service authentication
+- **Security Documentation**: See `SECURITY.md` for detailed security configuration
 - No sensitive information should be committed to repository

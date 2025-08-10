@@ -7,57 +7,19 @@ from dotenv import load_dotenv
 # --- Configuration ---
 load_dotenv()  # Load environment variables from .env file
 FASTAPI_URL = os.getenv("FASTAPI_URL", "http://127.0.0.1:8000/query")  # URL of your FastAPI backend
-DEMO_PASSWORD = os.getenv("DEMO_PASSWORD")
 API_SECRET_KEY = os.getenv("API_SECRET_KEY")
-
-# --- Password Protection Logic ---
-
-
-def check_password():
-    """Returns `True` if the user has entered the correct password."""
-    if "password_correct" not in st.session_state:
-        st.session_state.password_correct = False
-
-    if not DEMO_PASSWORD:  # Check if DEMO_PASSWORD is set at all
-        st.error(
-            "Uygulama şifresi yapılandırılmamış. Lütfen sistem yöneticisi ile iletişime geçin.")
-        return False
-    
-    if not API_SECRET_KEY:  # Check if API_SECRET_KEY is set
-        st.error(
-            "API güvenlik anahtarı yapılandırılmamış. Lütfen sistem yöneticisi ile iletişime geçin.")
-        return False
-
-    if st.session_state.password_correct:
-        return True
-
-    # Show input for password
-    password_placeholder = st.empty()
-    password = password_placeholder.text_input(
-        "Lütfen demo şifresini girin:", type="password")
-
-    if not password:  # Don't proceed if password field is empty
-        return False
-
-    if password == DEMO_PASSWORD:
-        st.session_state.password_correct = True
-        password_placeholder.empty()  # Clear the password input
-        st.rerun()  # Rerun to show the main app
-        return True
-    elif password:  # if password entered but incorrect
-        st.error("Girilen şifre yanlış.")
-        st.session_state.password_correct = False
-        return False
-    return False
 
 
 # --- Streamlit App UI ---
 st.set_page_config(page_title="TBK Kira Hukuku Asistanı", layout="wide")
 
-if not check_password():
-    st.stop()  # Do not render the rest of the app if password is not correct
+# Check if API key is configured
+if not API_SECRET_KEY:
+    st.error(
+        "API güvenlik anahtarı yapılandırılmamış. Lütfen sistem yöneticisi ile iletişime geçin.")
+    st.stop()
 
-# If password is correct, the rest of the app will render below:
+# Main app starts here:
 st.title("⚖️ Türk Borçlar Kanunu - Kira Hukuku Asistanı")
 st.caption("Konut ve Çatılı İşyeri Kiraları maddeleri hakkında sorularınızı sorun.")
 

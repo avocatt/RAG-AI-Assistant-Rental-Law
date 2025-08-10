@@ -19,6 +19,10 @@ services:
       start_period: 120s
     networks:
       - rental-rag-network
+    labels:
+      # Traefik Basic Auth middleware for backend
+      - traefik.http.middlewares.backend-auth.basicauth.users=${BASIC_AUTH_CREDENTIALS}
+      - traefik.http.routers.backend.middlewares=backend-auth
     logging:
       driver: "json-file"
       options:
@@ -34,12 +38,15 @@ services:
     restart: unless-stopped
     environment:
       - FASTAPI_URL=${FASTAPI_URL}
-      - DEMO_PASSWORD=${DEMO_PASSWORD}
       - API_SECRET_KEY=${API_SECRET_KEY}
     depends_on:
       - backend
     networks:
       - rental-rag-network
+    labels:
+      # Traefik Basic Auth middleware for frontend
+      - traefik.http.middlewares.frontend-auth.basicauth.users=${BASIC_AUTH_CREDENTIALS}
+      - traefik.http.routers.frontend.middlewares=frontend-auth
     logging:
       driver: "json-file"
       options:
