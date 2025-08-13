@@ -7,11 +7,11 @@ address = "0.0.0.0"
 # Disable file watching in production
 fileWatcherType = "none"
 
-# Enable XSRF protection
-enableXsrfProtection = true
+# Disable XSRF protection (handled by Traefik at infrastructure level)
+enableXsrfProtection = false
 
-# Enable CORS protection
-enableCORS = true
+# Disable CORS (not needed when XSRF is disabled)
+enableCORS = false
 
 # Disable development mode
 runOnSave = false
