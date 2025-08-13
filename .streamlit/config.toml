@@ -11,7 +11,7 @@ fileWatcherType = "none"
 enableXsrfProtection = true
 
 # Enable CORS protection
-enableCORS = false
+enableCORS = true
 
 # Disable development mode
 runOnSave = false
