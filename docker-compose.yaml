@@ -17,8 +17,6 @@ services:
       timeout: 30s
       retries: 3
       start_period: 120s
-    networks:
-      - rental-rag-network
     labels:
       # Traefik Basic Auth middleware for backend
       - traefik.http.middlewares.backend-auth.basicauth.users=${BASIC_AUTH_CREDENTIALS}
@@ -41,8 +39,6 @@ services:
       - API_SECRET_KEY=${API_SECRET_KEY}
     depends_on:
       - backend
-    networks:
-      - rental-rag-network
     labels:
       # Traefik Basic Auth middleware for frontend
       - traefik.http.middlewares.frontend-auth.basicauth.users=${BASIC_AUTH_CREDENTIALS}
@@ -52,10 +48,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-networks:
-  rental-rag-network:
-    driver: bridge
 
 volumes:
   chroma_data:
