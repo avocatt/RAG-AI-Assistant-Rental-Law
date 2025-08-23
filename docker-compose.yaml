@@ -1,6 +1,6 @@
 services:
   # FastAPI Backend Service
-  backend:
+  rental-law-backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
@@ -28,7 +28,7 @@ services:
         max-file: "3"
 
   # Streamlit Frontend Service  
-  frontend:
+  rental-law-frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
@@ -38,7 +38,7 @@ services:
       - FASTAPI_URL=${FASTAPI_URL}
       - API_SECRET_KEY=${API_SECRET_KEY}
     depends_on:
-      - backend
+      - rental-law-backend
     labels:
       # Traefik Basic Auth middleware for frontend
       - traefik.http.middlewares.frontend-auth.basicauth.users=${BASIC_AUTH_CREDENTIALS}
