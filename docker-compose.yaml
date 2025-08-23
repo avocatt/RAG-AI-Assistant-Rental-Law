@@ -19,8 +19,8 @@ services:
       start_period: 120s
     labels:
       # Traefik Basic Auth middleware for backend
-      - traefik.http.middlewares.backend-auth.basicauth.users=${BASIC_AUTH_CREDENTIALS}
-      - traefik.http.routers.backend.middlewares=backend-auth
+      - traefik.http.middlewares.rental-backend-auth.basicauth.users=${BASIC_AUTH_CREDENTIALS}
+      - traefik.http.routers.rental-backend.middlewares=rental-backend-auth
     logging:
       driver: "json-file"
       options:
@@ -41,8 +41,8 @@ services:
       - rental-law-backend
     labels:
       # Traefik Basic Auth middleware for frontend
-      - traefik.http.middlewares.frontend-auth.basicauth.users=${BASIC_AUTH_CREDENTIALS}
-      - traefik.http.routers.frontend.middlewares=frontend-auth
+      - traefik.http.middlewares.rental-frontend-auth.basicauth.users=${BASIC_AUTH_CREDENTIALS}
+      - traefik.http.routers.rental-frontend.middlewares=rental-frontend-auth
     logging:
       driver: "json-file"
       options:
