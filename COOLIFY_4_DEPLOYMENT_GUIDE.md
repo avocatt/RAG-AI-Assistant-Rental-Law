@@ -29,11 +29,13 @@ Coolify 4.0 has evolved significantly from earlier versions, introducing a servi
 5. **Keep compose files clean** - Focus on application logic only
 
 ### ❌ AVOID These Things:
-1. **Manual Traefik labels** - Coolify generates these automatically
-2. **External network references** - Coolify manages networking per stack
-3. **Port mappings in compose** - Can cause "port already allocated" errors
-4. **Hardcoded URLs** - Use magic variables instead
-5. **Custom container names** - Breaks rolling updates and scaling
+1. **External network references** - Coolify manages networking per stack
+2. **Port mappings in compose** - Can cause "port already allocated" errors
+3. **Hardcoded URLs** - Use magic variables instead
+4. **Custom container names** - Breaks rolling updates and scaling
+
+### ⚠️ IMPORTANT LIMITATION:
+**Manual Traefik labels ARE REQUIRED for custom domains** - Coolify only generates Traefik labels automatically for auto-generated domains (*.sslip.io), NOT for custom domains. See the "Custom Domain Labels" section below.
 
 ## Docker Compose Configuration
 
@@ -113,16 +115,81 @@ volumes:
 # NO networks section - Coolify handles this
 ```
 
+## Custom Domain Labels
+
+⚠️ **CRITICAL:** If you use custom domains (not auto-generated *.sslip.io), you MUST add Traefik labels manually.
+
+### Template for Custom Domain Services
+
+```yaml
+services:
+  backend:
+    build: ./backend
+    expose:
+      - "8000"
+    environment:
+      - FRONTEND_URL=${SERVICE_FQDN_FRONTEND}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.gzip.compress=true"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      # HTTPS Router
+      - "traefik.http.routers.https-[unique-id]-backend.entryPoints=https"
+      - "traefik.http.routers.https-[unique-id]-backend.rule=Host(`api.yourdomain.com`)"
+      - "traefik.http.routers.https-[unique-id]-backend.tls=true"
+      - "traefik.http.routers.https-[unique-id]-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.https-[unique-id]-backend.middlewares=gzip"
+      - "traefik.http.services.https-[unique-id]-backend.loadbalancer.server.port=8000"
+      # HTTP to HTTPS Redirect
+      - "traefik.http.routers.http-[unique-id]-backend.entryPoints=http"
+      - "traefik.http.routers.http-[unique-id]-backend.rule=Host(`api.yourdomain.com`)"
+      - "traefik.http.routers.http-[unique-id]-backend.middlewares=redirect-to-https"
+
+  frontend:
+    build: ./frontend
+    expose:
+      - "80"
+    environment:
+      - API_URL=${SERVICE_FQDN_BACKEND}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.gzip.compress=true"
+      # HTTPS Router  
+      - "traefik.http.routers.https-[unique-id]-frontend.entryPoints=https"
+      - "traefik.http.routers.https-[unique-id]-frontend.rule=Host(`yourdomain.com`)"
+      - "traefik.http.routers.https-[unique-id]-frontend.tls=true"
+      - "traefik.http.routers.https-[unique-id]-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.https-[unique-id]-frontend.middlewares=gzip"
+      - "traefik.http.services.https-[unique-id]-frontend.loadbalancer.server.port=80"
+      # HTTP to HTTPS Redirect
+      - "traefik.http.routers.http-[unique-id]-frontend.entryPoints=http"
+      - "traefik.http.routers.http-[unique-id]-frontend.rule=Host(`yourdomain.com`)"
+      - "traefik.http.routers.http-[unique-id]-frontend.middlewares=redirect-to-https"
+```
+
+### Important Notes:
+- **Replace `[unique-id]`** with a short unique identifier (e.g., part of your app's UUID)
+- **Router names must be unique** across your entire VPS
+- **Both HTTP and HTTPS routers needed** for proper SSL redirect
+- **Magic variables still work** for inter-service communication
+
 ## Common Issues & Solutions
 
 ### Issue: "No Available Server" Error
 **Symptoms:** Containers are running and healthy, but domains return "no available server"
 
-**Root Cause:** Traefik routing not configured properly
+**Root Cause:** Traefik routing not configured properly - usually missing Traefik labels for custom domains
 
-**Solution:**
-1. Remove all manual Traefik labels from docker-compose.yml
-2. Configure domains in Coolify UI for each service
+**Solutions:**
+
+**Option 1: Use Auto-Generated Domains (Quick Fix)**
+1. In Coolify UI, click "Generate Domain" for each service
+2. Use the provided *.sslip.io domains temporarily
+3. Coolify will automatically add Traefik labels
+
+**Option 2: Add Manual Traefik Labels for Custom Domains (Recommended)**
+1. Keep your custom domains in Coolify UI
+2. Add Traefik labels to docker-compose.yml (see Custom Domain Labels section)
 3. Ensure services use `expose` not `ports`
 4. Redeploy the application
 
@@ -248,7 +315,8 @@ If you need services from different applications to communicate:
 
 ### Pre-Deployment Checklist:
 - [ ] No `container_name` specifications in docker-compose.yml
-- [ ] No Traefik labels in docker-compose.yml  
+- [ ] **If using custom domains:** Traefik labels added to docker-compose.yml
+- [ ] **If using auto-generated domains:** No Traefik labels needed
 - [ ] No `ports` mappings, only `expose` directives
 - [ ] No external network configurations
 - [ ] Magic variables used for inter-service communication
@@ -294,11 +362,12 @@ docker logs coolify-proxy --tail 20
 ## Migration from Older Versions
 
 ### From Manual Traefik Setup:
-1. **Remove all Traefik labels** from docker-compose files
-2. **Remove custom networks** references  
-3. **Add domain configuration** in Coolify UI
-4. **Replace hardcoded URLs** with magic variables
-5. **Test thoroughly** before going live
+1. **If using auto-generated domains:** Remove all Traefik labels from docker-compose files
+2. **If using custom domains:** Update Traefik labels to Coolify format (see Custom Domain Labels section)
+3. **Remove custom networks** references  
+4. **Add domain configuration** in Coolify UI
+5. **Replace hardcoded URLs** with magic variables
+6. **Test thoroughly** before going live
 
 ### From Coolify 3.x:
 1. **Update docker-compose syntax** to remove deprecated features

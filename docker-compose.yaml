@@ -23,6 +23,19 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.gzip.compress=true"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.https-sgcw-backend.entryPoints=https"
+      - "traefik.http.routers.https-sgcw-backend.rule=Host(`tbk-rag-api.emreterzi.com`)"
+      - "traefik.http.routers.https-sgcw-backend.tls=true"
+      - "traefik.http.routers.https-sgcw-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.https-sgcw-backend.middlewares=gzip"
+      - "traefik.http.services.https-sgcw-backend.loadbalancer.server.port=8000"
+      - "traefik.http.routers.http-sgcw-backend.entryPoints=http"
+      - "traefik.http.routers.http-sgcw-backend.rule=Host(`tbk-rag-api.emreterzi.com`)"
+      - "traefik.http.routers.http-sgcw-backend.middlewares=redirect-to-https"
 
   # Streamlit Frontend Service  
   rental-law-frontend:
@@ -42,6 +55,18 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.gzip.compress=true"
+      - "traefik.http.routers.https-sgcw-frontend.entryPoints=https"
+      - "traefik.http.routers.https-sgcw-frontend.rule=Host(`tbk-rag.emreterzi.com`)"
+      - "traefik.http.routers.https-sgcw-frontend.tls=true"
+      - "traefik.http.routers.https-sgcw-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.https-sgcw-frontend.middlewares=gzip"
+      - "traefik.http.services.https-sgcw-frontend.loadbalancer.server.port=8501"
+      - "traefik.http.routers.http-sgcw-frontend.entryPoints=http"
+      - "traefik.http.routers.http-sgcw-frontend.rule=Host(`tbk-rag.emreterzi.com`)"
+      - "traefik.http.routers.http-sgcw-frontend.middlewares=redirect-to-https"
 
 volumes:
   chroma_data:
