@@ -46,7 +46,7 @@ services:
       - "8501"
     restart: unless-stopped
     environment:
-      - FASTAPI_URL=${SERVICE_FQDN_RENTAL_LAW_BACKEND}
+      - FASTAPI_URL=${SERVICE_URL_RENTAL_LAW_BACKEND}/query
       - API_SECRET_KEY=${API_SECRET_KEY}
     depends_on:
       - rental-law-backend
